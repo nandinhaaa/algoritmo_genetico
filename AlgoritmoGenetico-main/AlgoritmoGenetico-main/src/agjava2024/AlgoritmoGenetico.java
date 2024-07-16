@@ -1,4 +1,5 @@
 package agjava2024;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -59,24 +60,52 @@ public class AlgoritmoGenetico {
         }
     }
 
-    private double fitness(ArrayList<Integer> cromossomo) {
-        double pesoTotal = 0, valorTotal = 0, volumeTotal = 0;
+    private double calcularPesoTotal(ArrayList<Integer> cromossomo) {
+        double pesoTotal = 0;
+        for (int i = 0; i < this.tamCromossomo; i++) {
+            if (cromossomo.get(i) == 1) {
+                pesoTotal += produtos.get(i).getPeso();
+            }
+        }
+        return pesoTotal;
+    }
+
+    private double calcularVolumeTotal(ArrayList<Integer> cromossomo) {
+        double volumeTotal = 0;
+        for (int i = 0; i < this.tamCromossomo; i++) {
+            if (cromossomo.get(i) == 1) {
+                Produto p = produtos.get(i);
+                volumeTotal += p.getLargura() * p.getAltura() * p.getProfundidade();
+            }
+        }
+        return volumeTotal;
+    }
+
+    private boolean verificaRestricoes(ArrayList<Integer> cromossomo) {
+        double pesoTotal = 0;
+        double volumeTotal = 0;
         for (int i = 0; i < this.tamCromossomo; i++) {
             if (cromossomo.get(i) == 1) {
                 Produto p = produtos.get(i);
                 pesoTotal += p.getPeso();
                 volumeTotal += p.getLargura() * p.getAltura() * p.getProfundidade();
                 if (p.getLargura() > larguraMaxima || p.getAltura() > alturaMaxima || p.getProfundidade() > profundidadeMaxima) {
-                    return 0; // Penaliza se qualquer dimensão exceder o máximo permitido
+                    return false; // Penaliza se qualquer dimensão exceder o máximo permitido
                 }
-                valorTotal += p.getValor();
             }
         }
-        if (pesoTotal <= this.capacidadePeso && volumeTotal <= (larguraMaxima * alturaMaxima * profundidadeMaxima)) {
-            return valorTotal;
-        } else {
-            return 0;
+        return pesoTotal <= this.capacidadePeso && volumeTotal <= (larguraMaxima * alturaMaxima * profundidadeMaxima);
+    }
+
+    private double calcularBeneficio(ArrayList<Integer> cromossomo) {
+        return calcularVolumeTotal(cromossomo); // O benefício é dado pelo volume total
+    }
+
+    private double fitness(ArrayList<Integer> cromossomo) {
+        if (!verificaRestricoes(cromossomo)) {
+            return 0; // Penaliza soluções que não atendem às restrições
         }
+        return calcularBeneficio(cromossomo);
     }
 
     private void inicializaPopulacao() {
@@ -90,11 +119,25 @@ public class AlgoritmoGenetico {
         }
     }
 
-    public void mostraPopulacao() {
-        for (int i = 0; i < populacao.size(); i++) {
-            System.out.println("Cromossomo " + i + ": " + populacao.get(i) + " Fitness: " + fitness(populacao.get(i)));
-        }
+public void mostraPopulacao() {
+    for (int i = 0; i < populacao.size(); i++) {
+        ArrayList<Integer> cromossomo = populacao.get(i);
+        double fitness = fitness(cromossomo);
+        double pesoTotal = calcularPesoTotal(cromossomo);
+        double volumeTotal = calcularVolumeTotal(cromossomo);
+
+        boolean respeitaRestricoes = verificaRestricoes(cromossomo);
+        String statusRestricoes = respeitaRestricoes ? "Respeita todas as restrições" : "Não respeita todas as restrições";
+
+        System.out.println("Cromossomo " + i + ": " + cromossomo +
+                "\nFitness: " + fitness +
+                "\nPeso total: " + pesoTotal +
+                "\nVolume total: " + volumeTotal +
+                "\nStatus das restrições: " + statusRestricoes +
+                "\n");
     }
+}
+
 
     public void executar() {
         inicializaPopulacao();
