@@ -13,7 +13,7 @@ class Produto {
     private double largura;
     private double altura;
     private double profundidade = 50; // profundidade padrão
-
+    
     public String getDescricao() {
         return descricao;
     }
