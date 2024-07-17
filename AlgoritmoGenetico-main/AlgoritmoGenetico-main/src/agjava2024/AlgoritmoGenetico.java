@@ -4,214 +4,271 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class AlgoritmoGenetico {
-    private ArrayList<Produto> produtos;
-    private int tamPopulacao;
-    private double capacidadePeso;
-    private double larguraMaxima;
-    private double alturaMaxima;
-    private double profundidadeMaxima;
-    private int probabilidadeMutacao;
-    private int qtdeCruzamentos;
-    private int numGeracoes;
-    private int tamCromossomo = 0;
 
-    private ArrayList<ArrayList<Integer>> populacao;
+    private final List<Carga> cargas = new ArrayList<>();
+    private final List<List<Integer>> populacao = new ArrayList<>();
+    private final List<Integer> roletaVirtual = new ArrayList<>();
+    private final int tamanhoCromossomo;
+    private final int limitePeso;
+    private final int probabilidadeMutacao;
+    private final int qtdeCruzamentos;
+    private final int numeroGeracoes;
+    private final double larguraMaxima;
+    private final double alturaMaxima;
+    private final double profundidadeMaxima;
 
-    public AlgoritmoGenetico(int populacao, double capacidadePeso, double larguraMaxima, double alturaMaxima, double profundidadeMaxima, int probabilidadeMutacao, int qtdeCruzamentos, int numGeracoes) {
-        this.produtos = new ArrayList<>();
-        this.populacao = new ArrayList<>();
-        this.tamPopulacao = populacao;
-        this.capacidadePeso = capacidadePeso;
+    public AlgoritmoGenetico(int populacao, double limitePeso, int probabilidadeMutacao, int qtdeCruzamentos,
+                             int numeroGeracoes, double larguraMaxima, double alturaMaxima, double profundidadeMaxima) {
+        this.tamanhoCromossomo = populacao;
+        this.limitePeso = (int) limitePeso;
+        this.probabilidadeMutacao = probabilidadeMutacao;
+        this.qtdeCruzamentos = qtdeCruzamentos;
+        this.numeroGeracoes = numeroGeracoes;
         this.larguraMaxima = larguraMaxima;
         this.alturaMaxima = alturaMaxima;
         this.profundidadeMaxima = profundidadeMaxima;
-        this.probabilidadeMutacao = probabilidadeMutacao;
-        this.qtdeCruzamentos = qtdeCruzamentos;
-        this.numGeracoes = numGeracoes;
     }
 
-    public void carregaArquivo(String fileName) {
-        String csvFile = fileName;
-        String line = "";
-        String[] produto = null;
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-            while ((line = br.readLine()) != null) {
-                produto = line.split(",");
-                if (produto.length == 5) {
-                    Produto novoProduto = new Produto();
-                    novoProduto.setDescricao(produto[0]);
-                    novoProduto.setPeso(Double.parseDouble(produto[1]));
-                    novoProduto.setValor(Double.parseDouble(produto[2]));
-                    novoProduto.setLargura(Double.parseDouble(produto[3]));
-                    novoProduto.setAltura(Double.parseDouble(produto[4]));
-                    produtos.add(novoProduto);
-                    System.out.println(novoProduto);
-                    this.tamCromossomo++;
-                } else {
-                    System.out.println("Linha ignorada (número incorreto de colunas): " + line);
-                }
+    public void carregaArquivo(String nomeArquivo) {
+        try (BufferedReader br = new BufferedReader(new FileReader(nomeArquivo))) {
+            String linha;
+            String[] dadosCarga;
+            while ((linha = br.readLine()) != null) {
+                dadosCarga = linha.split(",");
+                adicionarCarga(criarCarga(dadosCarga));
             }
-            System.out.println("Tamanho do cromossomo: " + this.tamCromossomo);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Erro ao carregar arquivo '" + nomeArquivo + "'", e);
         }
     }
 
-    private double calcularPesoTotal(ArrayList<Integer> cromossomo) {
-        double pesoTotal = 0;
-        for (int i = 0; i < this.tamCromossomo; i++) {
-            if (cromossomo.get(i) == 1) {
-                pesoTotal += produtos.get(i).getPeso();
-            }
+    private Carga criarCarga(String[] dadosCarga) {
+        if (dadosCarga == null || dadosCarga.length < 5) {
+            throw new IllegalArgumentException("Dados insuficientes para criar carga!");
         }
-        return pesoTotal;
+        Carga novaCarga = new Carga();
+        novaCarga.setDescricao(dadosCarga[0]);
+        novaCarga.setPeso(Double.parseDouble(dadosCarga[1]));
+        novaCarga.setLargura(Double.parseDouble(dadosCarga[2]));
+        novaCarga.setAltura(Double.parseDouble(dadosCarga[3]));
+        novaCarga.setProfundidade(Double.parseDouble(dadosCarga[4]));
+        return novaCarga;
     }
 
-    private double calcularVolumeTotal(ArrayList<Integer> cromossomo) {
-        double volumeTotal = 0;
-        for (int i = 0; i < this.tamCromossomo; i++) {
-            if (cromossomo.get(i) == 1) {
-                Produto p = produtos.get(i);
-                volumeTotal += p.getLargura() * p.getAltura() * p.getProfundidade();
-            }
+    private void adicionarCarga(Carga novaCarga) {
+        if (novaCarga == null) {
+            throw new NullPointerException("Não há carga para adicionar!");
         }
-        return volumeTotal;
+        cargas.add(novaCarga);
     }
-
-    private boolean verificaRestricoes(ArrayList<Integer> cromossomo) {
-        double pesoTotal = 0;
-        double volumeTotal = 0;
-        for (int i = 0; i < this.tamCromossomo; i++) {
-            if (cromossomo.get(i) == 1) {
-                Produto p = produtos.get(i);
-                pesoTotal += p.getPeso();
-                volumeTotal += p.getLargura() * p.getAltura() * p.getProfundidade();
-                if (p.getLargura() > larguraMaxima || p.getAltura() > alturaMaxima || p.getProfundidade() > profundidadeMaxima) {
-                    return false; // Penaliza se qualquer dimensão exceder o máximo permitido
-                }
-            }
-        }
-        return pesoTotal <= this.capacidadePeso && volumeTotal <= (larguraMaxima * alturaMaxima * profundidadeMaxima);
-    }
-
-    private double calcularBeneficio(ArrayList<Integer> cromossomo) {
-        return calcularVolumeTotal(cromossomo); // O benefício é dado pelo volume total
-    }
-
-    private double fitness(ArrayList<Integer> cromossomo) {
-        if (!verificaRestricoes(cromossomo)) {
-            return 0; // Penaliza soluções que não atendem às restrições
-        }
-        return calcularBeneficio(cromossomo);
-    }
-
-    private void inicializaPopulacao() {
-        Random rand = new Random();
-        for (int i = 0; i < tamPopulacao; i++) {
-            ArrayList<Integer> cromossomo = new ArrayList<>();
-            for (int j = 0; j < tamCromossomo; j++) {
-                cromossomo.add(rand.nextInt(2)); // Adiciona 0 ou 1 aleatoriamente
-            }
-            populacao.add(cromossomo);
-        }
-    }
-
-public void mostraPopulacao() {
-    for (int i = 0; i < populacao.size(); i++) {
-        ArrayList<Integer> cromossomo = populacao.get(i);
-        double fitness = fitness(cromossomo);
-        double pesoTotal = calcularPesoTotal(cromossomo);
-        double volumeTotal = calcularVolumeTotal(cromossomo);
-
-        boolean respeitaRestricoes = verificaRestricoes(cromossomo);
-        String statusRestricoes = respeitaRestricoes ? "Respeita todas as restrições" : "Não respeita todas as restrições";
-
-        System.out.println("Cromossomo " + i + ": " + cromossomo +
-                "\nFitness: " + fitness +
-                "\nPeso total: " + pesoTotal +
-                "\nVolume total: " + volumeTotal +
-                "\nStatus das restrições: " + statusRestricoes +
-                "\n");
-    }
-}
-
 
     public void executar() {
-        inicializaPopulacao();
+        criarPopulacao();
+        for (int i = 0; i < numeroGeracoes; i++) {
+            System.out.println("Geração: " + i);
+            mostrarPopulacao();
+            operadoresGeneticos();
+            renovarPopulacao();
+            System.out.println("");
+        }
+        mostrarCargaAviao(populacao.get(obterMelhor()));
+        mostrarPioresAvaliados();
+    }
 
-        for (int geracao = 0; geracao < numGeracoes; geracao++) {
-            System.out.println("Geração: " + geracao);
-            mostraPopulacao();
-
-            ArrayList<ArrayList<Integer>> novaPopulacao = new ArrayList<>();
-
-            // Seleção e Crossover
-            while (novaPopulacao.size() < tamPopulacao) {
-                ArrayList<Integer> pai1 = selecionaPaiPorTorneio();
-                ArrayList<Integer> pai2 = selecionaPaiPorTorneio();
-
-                ArrayList<Integer> filho1 = new ArrayList<>(crossover(pai1, pai2));
-                ArrayList<Integer> filho2 = new ArrayList<>(crossover(pai2, pai1));
-
-                aplicaMutacao(filho1);
-                aplicaMutacao(filho2);
-
-                novaPopulacao.add(filho1);
-                novaPopulacao.add(filho2);
-            }
-
-            // Substitui a população antiga pela nova
-            populacao = new ArrayList<>(novaPopulacao);
+    private void criarPopulacao() {
+        for (int i = 0; i < tamanhoCromossomo; i++) {
+            populacao.add(criarCromossomo());
         }
     }
 
-    private ArrayList<Integer> selecionaPaiPorTorneio() {
-        Random rand = new Random();
-        ArrayList<Integer> melhorIndividuo = null;
-        double melhorFitness = -1;
-
-        // Seleciona dois indivíduos aleatórios e escolhe o melhor deles
-        for (int i = 0; i < 2; i++) {
-            ArrayList<Integer> individuo = populacao.get(rand.nextInt(tamPopulacao));
-            double fitnessAtual = fitness(individuo);
-
-            if (fitnessAtual > melhorFitness) {
-                melhorIndividuo = individuo;
-                melhorFitness = fitnessAtual;
-            }
-        }
-
-        return melhorIndividuo;
-    }
-
-    private ArrayList<Integer> crossover(ArrayList<Integer> pai1, ArrayList<Integer> pai2) {
-        Random rand = new Random();
-        int pontoCorte = rand.nextInt(tamCromossomo);
-
-        ArrayList<Integer> filho = new ArrayList<>();
-
-        // Crossover de um ponto
-        for (int i = 0; i < tamCromossomo; i++) {
-            if (i < pontoCorte) {
-                filho.add(pai1.get(i));
+    private List<Integer> criarCromossomo() {
+        List<Integer> novoCromossomo = new ArrayList<>();
+        for (int i = 0; i < cargas.size(); i++) {
+            if (Math.random() < 0.6) {
+                novoCromossomo.add(0);
             } else {
-                filho.add(pai2.get(i));
+                novoCromossomo.add(1);
             }
         }
-
-        return filho;
+        return novoCromossomo;
     }
 
-    private void aplicaMutacao(ArrayList<Integer> cromossomo) {
-        Random rand = new Random();
+    private void mostrarPopulacao() {
+        for (int i = 0; i < tamanhoCromossomo; i++) {
+            System.out.println("Cromossomo [" + i + "]: " + populacao.get(i));
+            System.out.println("> Avaliação: " + avaliarCromossomo(populacao.get(i)));
+        }
+    }
 
-        for (int i = 0; i < tamCromossomo; i++) {
-            if (rand.nextInt(100) < probabilidadeMutacao) { // Probabilidade de mutação
-                cromossomo.set(i, 1 - cromossomo.get(i)); // Alterna entre 0 e 1
+    private double avaliarCromossomo(List<Integer> cromossomo) {
+        double massaTotal = 0;
+        double volumeTotal = 0;
+        boolean dimensaoInvalida = false;
+
+        for (int i = 0; i < cargas.size(); i++) {
+            if (cromossomo.get(i) == 1) {
+                Carga cargaAnalisada = cargas.get(i);
+                massaTotal += cargaAnalisada.getPeso(); // Calcula o peso total dos itens selecionados
+
+                // Calcula o volume total considerando largura, altura e profundidade
+                volumeTotal += cargaAnalisada.getLargura() * cargaAnalisada.getAltura() * cargaAnalisada.getProfundidade();
+
+                // Verifica se algum item excede as dimensões máximas permitidas individualmente
+                if (cargaAnalisada.getLargura() > larguraMaxima
+                        || cargaAnalisada.getAltura() > alturaMaxima
+                        || cargaAnalisada.getProfundidade() > profundidadeMaxima) {
+                    dimensaoInvalida = true;
+                }
             }
         }
+
+        // Verifica se o conjunto de itens selecionados excede o peso máximo permitido ou as dimensões máximas
+        if (massaTotal > limitePeso || dimensaoInvalida) {
+            return 0D; // Penaliza soluções que não atendem às restrições
+        }
+
+        // O benefício da função de avaliação é dado pelo volume total de carga que se consegue carregar
+        return volumeTotal; // Quanto maior o volume total, maior o benefício
+    }
+
+    private void operadoresGeneticos() {
+        List<Integer> primeiroFilho;
+        List<Integer> segundoFilho;
+        List<List<Integer>> filhos;
+        gerarRoleta();
+        for (int i = 0; i < qtdeCruzamentos; i++) {
+            filhos = cruzamento();
+            primeiroFilho = filhos.get(0);
+            segundoFilho = filhos.get(1);
+            mutacao(primeiroFilho);
+            mutacao(segundoFilho);
+            populacao.add(primeiroFilho);
+            populacao.add(segundoFilho);
+        }
+    }
+
+    private void gerarRoleta() {
+        List<Double> fitnessIndividuos = new ArrayList<>();
+        double totalFitness = 0;
+        for (int i = 0; i < tamanhoCromossomo; i++) {
+            fitnessIndividuos.add(avaliarCromossomo(populacao.get(i)));
+            totalFitness += fitnessIndividuos.get(i);
+        }
+        System.out.println("Soma total fitness: " + totalFitness);
+        for (int i = 0; i < tamanhoCromossomo; i++) {
+            double qtdPosicoes = (fitnessIndividuos.get(i) / totalFitness) * 1000;
+            for (int j = 0; j <= qtdPosicoes; j++) {
+                roletaVirtual.add(i);
+            }
+        }
+    }
+
+    private List<List<Integer>> cruzamento() {
+        List<Integer> filho1 = new ArrayList<>();
+        List<Integer> filho2 = new ArrayList<>();
+        List<List<Integer>> filhos = new ArrayList<>();
+        List<Integer> pai1, pai2;
+        int indice_pai1, indice_pai2;
+        indice_pai1 = roleta();
+        indice_pai2 = roleta();
+        pai1 = populacao.get(indice_pai1);
+        pai2 = populacao.get(indice_pai2);
+        Random r = new Random();
+        int pos = r.nextInt(cargas.size());
+        for (int i = 0; i <= pos; i++) {
+            filho1.add(pai1.get(i));
+            filho2.add(pai2.get(i));
+        }
+        for (int i = pos + 1; i < cargas.size(); i++) {
+            filho1.add(pai2.get(i));
+            filho2.add(pai1.get(i));
+        }
+        filhos.add(filho1);
+        filhos.add(filho2);
+        return filhos;
+    }
+
+    private int roleta() {
+        Random r = new Random();
+        int selecionado = r.nextInt(roletaVirtual.size());
+        return roletaVirtual.get(selecionado);
+    }
+
+    private void mutacao(List<Integer> filho) {
+        Random r = new Random();
+        int v = r.nextInt(100);
+        if (v < probabilidadeMutacao) {
+            int ponto = r.nextInt(cargas.size());
+            filho.set(ponto, filho.get(ponto) == 1 ? 0 : 1); // Inverte o valor do gene
+            System.out.println("Ocorreu mutação!");
+        }
+    }
+
+    private void renovarPopulacao() {
+        for (int i = 0; i < qtdeCruzamentos; i++) {
+            populacao.remove(obterPior());
+        }
+    }
+
+    private int obterPior() {
+        int indicePior = 0;
+        double pior;
+        double nota;
+        pior = avaliarCromossomo(populacao.get(0));
+        for (int i = 1; i < tamanhoCromossomo; i++) {
+            nota = avaliarCromossomo(populacao.get(i));
+            if (nota < pior) {
+                pior = nota;
+                indicePior = i;
+            }
+        }
+        return indicePior;
+    }
+
+    private void mostrarCargaAviao(List<Integer> resultado) {
+        System.out.println(" Avaliação do melhor: " + avaliarCromossomo(resultado));
+        System.out.println("As cargas que foram levadas no avião:");
+        for (int i = 0; i < resultado.size(); i++) {
+            if (resultado.get(i) == 1) {
+                System.out.println(cargas.get(i));
+            }
+        }
+    }
+
+    private void mostrarPioresAvaliados() {
+        System.out.println("\nCargas que não entram no avião devido às restrições:");
+        for (int i = 0; i < tamanhoCromossomo; i++) {
+            double avaliacao = avaliarCromossomo(populacao.get(i));
+            if (avaliacao == 0) {
+                System.out.println("Cromossomo [" + i + "]: " + populacao.get(i));
+                System.out.println("> Avaliação: " + avaliacao);
+            }
+        }
+    }
+
+    private int obterMelhor() {
+        int indiceMelhor = 0;
+        double melhor;
+        double nota;
+        melhor = avaliarCromossomo(populacao.get(0));
+        for (int i = 1; i < tamanhoCromossomo; i++) {
+            nota = avaliarCromossomo(populacao.get(i));
+            if (nota > melhor) {
+                melhor = nota;
+                indiceMelhor = i;
+            }
+        }
+        return indiceMelhor;
     }
 }
