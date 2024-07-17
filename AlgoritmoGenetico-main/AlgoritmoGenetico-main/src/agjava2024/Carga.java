@@ -1,19 +1,12 @@
 package agjava2024;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
-
-class Produto {
+public class Carga {
     private String descricao;
     private double peso;
-    private double valor;
     private double largura;
     private double altura;
-    private double profundidade = 50; // profundidade padrão
-    
+    private double profundidade;
+
     public String getDescricao() {
         return descricao;
     }
@@ -28,14 +21,6 @@ class Produto {
 
     public void setPeso(double peso) {
         this.peso = peso;
-    }
-
-    public double getValor() {
-        return valor;
-    }
-
-    public void setValor(double valor) {
-        this.valor = valor;
     }
 
     public double getLargura() {
@@ -58,8 +43,12 @@ class Produto {
         return profundidade;
     }
 
+    public void setProfundidade(double profundidade) {
+        this.profundidade = profundidade;
+    }
+
     @Override
     public String toString() {
-        return "Produto{Descricao:" + this.descricao + " Peso:" + this.peso + " Valor:" + this.valor + " Largura:" + this.largura + " Altura:" + this.altura + " Profundidade:" + this.profundidade + "}";
+        return "Produto{Descricao:" + this.descricao + " Peso:" + this.peso + " Largura:" + this.largura + " Altura:" + this.altura + " Profundidade:" + this.profundidade + " }";
     }
 }
