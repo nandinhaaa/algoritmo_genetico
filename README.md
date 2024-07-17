@@ -48,6 +48,9 @@ O construtor foi ajustado para incluir parâmetros essenciais para o algoritmo:
 
 O método principal `main` foi ajustado para configurar os parâmetros do algoritmo genético, carregar os produtos do arquivo CSV e iniciar a execução do algoritmo para otimizar o planejamento de carga em aviões.
 
+### Resultado
+![image](https://github.com/user-attachments/assets/796f7926-9de1-4702-823e-0c7b70c09d70)
+
 ---
 
 Essas mudanças foram feitas para adaptar o algoritmo genético ao problema específico de planejamento de carga em aviões, garantindo que as restrições de peso e dimensões sejam estritamente respeitadas durante a otimização.
