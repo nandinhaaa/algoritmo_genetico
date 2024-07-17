@@ -1,24 +1,18 @@
 package agjava2024;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
-
 public class AGJava2024 {
 
     public static void main(String[] args) {
         int populacao = 20;
-        double limitePeso = 8000; // kg
-        double larguraMaxima = 300; // cm
-        double alturaMaxima = 250; // cm
-        double profundidadeMaxima = 400; // cm
+        double limitePeso = 400;
         int probabilidadeMutacao = 5; // 5%
         int qtdeCruzamentos = 5;
         int numeroGeracoes = 10;
+        double larguraMaxima = 300;
+        double alturaMaxima = 300;
+        double profundidadeMaxima = 400;
 
-        AlgoritmoGenetico meuAg = new AlgoritmoGenetico(populacao, limitePeso, larguraMaxima, alturaMaxima, profundidadeMaxima, probabilidadeMutacao, qtdeCruzamentos, numeroGeracoes);
+        AlgoritmoGenetico meuAg = new AlgoritmoGenetico(populacao, limitePeso, probabilidadeMutacao, qtdeCruzamentos, numeroGeracoes, larguraMaxima, alturaMaxima, profundidadeMaxima);
         meuAg.carregaArquivo("carga_aviao.csv");
         meuAg.executar();
     }
