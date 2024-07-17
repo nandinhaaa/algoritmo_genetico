@@ -1,4 +1,3 @@
-
 # AGJava2024 - Algoritmo Genético para Planejamento de Carga em Aviões
 
 Este projeto implementa um Algoritmo Genético (AG) para resolver o problema de otimização do planejamento de carga em aviões. O objetivo é maximizar o benefício total da carga respeitando as restrições de peso e dimensões máximas permitidas na aeronave.
@@ -52,9 +51,3 @@ O método principal `main` foi ajustado para configurar os parâmetros do algori
 ---
 
 Essas mudanças foram feitas para adaptar o algoritmo genético ao problema específico de planejamento de carga em aviões, garantindo que as restrições de peso e dimensões sejam estritamente respeitadas durante a otimização.
-
-
-### Resultado 
-![resultado](https://github.com/user-attachments/assets/9b709247-e637-49e5-a2ec-e2a4245255bf)
-
-
